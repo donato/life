@@ -1,9 +1,9 @@
 var sampleBoard = [
 	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0],
+	[0,1,1,1,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0],
-	[0,0,0,0,1,0,0,0,0,0],
-	[0,0,0,1,0,1,0,0,0,0],
+	[0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,1,0,1,0,0,0,0],
 	[0,0,0,1,0,0,0,0,0,0],
 	[0,0,0,1,0,1,0,0,0,0],
@@ -31,10 +31,14 @@ var board = {
 function countNeighbors(board, x, y) {
 	var count = 0;
 	
+	count += board.at(x-1, y-1);
 	count += board.at(x-1, y);
-	count += board.at(x+1, y);
+	count += board.at(x-1, y+1);
 	count += board.at(x, y-1);
 	count += board.at(x, y+1);
+	count += board.at(x+1, y-1);
+	count += board.at(x+1, y);
+	count += board.at(x+1, y+1);
 	
 	return count;
 }
@@ -64,7 +68,7 @@ function tick(board) {
 	
 		newRow = [];
 		for ( j = 0; j < board.height; j+=1 ) {
-			newRow.push( isAlive(board, i, j) );
+			newRow.push( isAlive(board, i, j) ? 1 : 0);
 		}
 		newBoard.push(newRow);
 	}
@@ -72,8 +76,46 @@ function tick(board) {
 }
 
 $(document).ready(function() {
-	$("#game_of_life").html("hello");
+	var width, height, padding;
+	
+	width = height = 500;
+	padding = 20;
+	
+	var scale = d3.scale.linear()
+		.domain([0, board.width])
+		.range([padding, width-padding]);
+	
+	var svg = d3.select('#game_of_life')
+		.append('svg').attr('width', width).attr('height', height);
+	
+	function refresh(data) {
+		var rows = svg.selectAll('.row')
+			.data(data);
+		rows
+			.enter()
+			.append('svg:g')
+			.attr('class', 'row');
+			
+		var circles = rows.selectAll('circle')
+			.data(function(d) { return d; });
+		circles
+			.enter()
+			.append('circle');
 
-	console.log(board.board);
-	console.log(tick(board));
+		circles
+			.attr('cx', function(val,x,y) { return scale(x); }  )
+			.attr('cy', function(val,x,y) { return scale(y); }  )
+			.attr('r',  function(val,x,y) { return val*5+5; }  )
+			.attr('fill',  function(val,x,y) { if (val) { return 'green'; }return 'red';}  );
+			
+		circles.exit().remove();
+	}
+	refresh(board.board);
+	// tick(board);
+	// return;
+	window.clearit = setInterval(function() {
+		console.log(board.board);
+		board.board = tick(board);
+		refresh(board.board);
+	},1000);
 });
